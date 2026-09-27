@@ -1,0 +1,81 @@
+var buttonSend = document.querySelector(".button");
+var textareaSend = document.querySelector(".textarea");
+var loadingDiv = document.querySelector(".loading");
+
+buttonSend.addEventListener("click", sendMessage);
+
+buttonSend.disabled = true;
+
+textareaSend.addEventListener("input", function () {
+    buttonSend.disabled = textareaSend.value.trim() === "";
+});
+
+textareaSend.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    buttonSend.click();
+    textareaSend.value = "";
+
+    //   show loading
+    loadingDiv.classList.add("show");
+  }
+});
+
+async function sendMessage() {
+  // Lấy giá trị người nhập trong ô textarea
+  var valueTextArea = textareaSend.value;
+
+  //   Tạo thẻ div với value từ ô textarea class "own"
+  var newDivOwn = document.createElement("div");
+  newDivOwn.classList.add("own");
+  newDivOwn.innerText = valueTextArea;
+
+  //   đưa div thành con của main
+  document.querySelector("#main").appendChild(newDivOwn);
+
+  main.scrollTo({
+    top: main.scrollHeight,
+    behavior: "smooth",
+  });
+
+  //   gửi yêu cầu qua gemini
+  const response = await fetch("/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      valueTextArea: valueTextArea,
+    }),
+  });
+
+  await sleep(5000);
+
+  // đợi yêu cầu phản hồi và hứng câu trả lời
+  const dataConvertJson = await response.json();
+
+  //  Lấy giá trị phản hồi từ gemini
+  const valueResponse = dataConvertJson.reply;
+  //   hidden
+  loadingDiv.classList.remove("show");
+
+  console.log("Phản hồi: ", valueResponse);
+
+  //   HIển thị câu phản hồi ra ngoài màn hình
+  //   Tạo thẻ div với value từ ô textarea class "guest"
+  var newDivGuest = document.createElement("div");
+  newDivGuest.classList.add("guest");
+  newDivGuest.innerText = valueResponse;
+
+  //   đưa div thành con của main
+  document.querySelector("#main").appendChild(newDivGuest);
+
+  main.scrollTo({
+    top: main.scrollHeight,
+    behavior: "smooth",
+  });
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
