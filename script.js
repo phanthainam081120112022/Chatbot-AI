@@ -1,3 +1,6 @@
+const API_GEMINI_KEY = window.APP_CONFIG.API_GEMINI_KEY;
+const model = "gemini-3.5-flash-lite";
+
 var buttonSend = document.querySelector(".button");
 var textareaSend = document.querySelector(".textarea");
 var loadingDiv = document.querySelector(".loading");
@@ -7,7 +10,7 @@ buttonSend.addEventListener("click", sendMessage);
 buttonSend.disabled = true;
 
 textareaSend.addEventListener("input", function () {
-    buttonSend.disabled = textareaSend.value.trim() === "";
+  buttonSend.disabled = textareaSend.value.trim() === "";
 });
 
 textareaSend.addEventListener("keydown", function (event) {
@@ -39,27 +42,41 @@ async function sendMessage() {
   });
 
   //   gửi yêu cầu qua gemini
-  const response = await fetch("/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      valueTextArea: valueTextArea,
-    }),
-  });
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_GEMINI_KEY}`,
+    {
+      method: "POST",
 
-  await sleep(5000);
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: valueTextArea
+              }
+            ]
+          }
+        ]
+      })
+    }
+  );
 
   // đợi yêu cầu phản hồi và hứng câu trả lời
   const dataConvertJson = await response.json();
 
   //  Lấy giá trị phản hồi từ gemini
-  const valueResponse = dataConvertJson.reply;
+  const valueResponse = dataConvertJson.candidates?.[0]
+                ?.content
+                ?.parts?.[0]
+                ?.text || "Không nhận được phản hồi.";
+                
   //   hidden
   loadingDiv.classList.remove("show");
-
-  console.log("Phản hồi: ", valueResponse);
 
   //   HIển thị câu phản hồi ra ngoài màn hình
   //   Tạo thẻ div với value từ ô textarea class "guest"
@@ -74,8 +91,4 @@ async function sendMessage() {
     top: main.scrollHeight,
     behavior: "smooth",
   });
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
