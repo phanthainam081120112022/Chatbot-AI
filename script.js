@@ -1,4 +1,4 @@
-const API_GEMINI_KEY = window.APP_CONFIG.API_GEMINI_KEY;
+const API_GEMINI_KEY = "AQ.Ab8RN6L-9Z5m0zlrNGQdsr1RlhkofK7KlVdY9KBqI779TeUBSQ";
 const model = "gemini-3.5-flash-lite";
 
 var buttonSend = document.querySelector(".button");
