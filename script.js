@@ -1,4 +1,4 @@
-const API_GEMINI_KEY = "AQ.Ab8RN6L-9Z5m0zlrNGQdsr1RlhkofK7KlVdY9KBqI779TeUBSQ";
+const API_GEMINI_KEY = "AQ.Ab8RN6LdNYQgxdr_C_DBwgu2a4MV1mCSmS9gDzCMsPsO_ILWUQ";
 const model = "gemini-3.5-flash-lite";
 
 var buttonSend = document.querySelector(".button");
