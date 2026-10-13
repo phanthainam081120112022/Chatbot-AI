@@ -33,22 +33,24 @@ body {
     background-color: aliceblue;
     margin: 12px;
     padding: 8px;
-    width: min-content;
-    max-width: 50%;
-    min-width: 500px;
+    width: fit-content;
+    max-width: 70%;
+    min-width: 220px;
     border-radius: 15px;
+    overflow-wrap: anywhere;
 }
 
 .own {
     background-color: cornflowerblue;
     margin: 12px;
     padding: 8px;
-    width: min-content;
-    max-width: 50%;
+    width: fit-content;
+    max-width: 70%;
     min-width: 200px;
     margin-left: auto;
     border-radius: 15px;
     color: whitesmoke;
+    overflow-wrap: anywhere;
 }
 
 /* FOOTER */
@@ -70,6 +72,8 @@ body {
 
 .enter{
     margin-left: auto;
+    display: flex;
+    gap: 8px;
 }
 
 .input-text {
@@ -85,12 +89,36 @@ body {
     outline: none;
 }
 
-.button{
+.button,
+.voice-button,
+.speak-button {
     padding: 14px;
     border-radius: 100%;
-    background-color: cornflowerblue;
     color: whitesmoke;
     border: none;
+    cursor: pointer;
+    opacity: 1;
+    transition: 0.2s;
+    width: 46px;
+    height: 46px;
+}
+
+.button,
+.speak-button.active {
+    background-color: cornflowerblue;
+}
+
+.voice-button {
+    background-color: seagreen;
+}
+
+.speak-button {
+    background-color: gray;
+}
+
+.voice-button.listening {
+    background-color: crimson;
+    box-shadow: 0 0 0 6px rgba(220, 20, 60, 0.16);
 }
 
 .loading{
@@ -103,14 +131,31 @@ body {
     display: block;
 }
 
-.button {
-    cursor: pointer;
-    opacity: 1;
-    transition: 0.2s;
-}
-
-.button:disabled {
+.button:disabled,
+.voice-button:disabled,
+.speak-button:disabled {
     cursor: not-allowed;
     opacity: 0.5;
+}
+
+@media (max-width: 640px) {
+    html,
+    body {
+        margin: 8px;
+    }
+
+    .guest,
+    .own {
+        max-width: 82%;
+        min-width: 0;
+    }
+
+    .button,
+    .voice-button,
+    .speak-button {
+        width: 42px;
+        height: 42px;
+        padding: 12px;
+    }
 }
 
