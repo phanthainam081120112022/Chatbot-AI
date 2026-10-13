@@ -1,7 +1,4 @@
-const API_GEMINI_KEY =
-  window.APP_CONFIG?.API_GEMINI_KEY 
-    ? window.APP_CONFIG.API_GEMINI_KEY
-    : "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";
+const API_GEMINI_KEY = "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";
 const model = "qwen/qwen3.8-27b";
 
 var main = document.querySelector("#main");
