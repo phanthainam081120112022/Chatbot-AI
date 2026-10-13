@@ -1,92 +1,216 @@
-const API_GEMINI_KEY = "AQ.Ab8RN6LdNYQgxdr_C_DBwgu2a4MV1mCSmS9gDzCMsPsO_ILWUQ";
-const model = "gemini-3.5-flash-lite";
+const API_GEMINI_KEY =
+  window.APP_CONFIG?.API_GEMINI_KEY 
+    ? window.APP_CONFIG.API_GEMINI_KEY
+    : "key gemini";
+const model = "qwen/qwen3.8-27b";
 
+var main = document.querySelector("#main");
 var buttonSend = document.querySelector(".button");
+var buttonVoice = document.querySelector(".voice-button");
+var buttonSpeak = document.querySelector(".speak-button");
 var textareaSend = document.querySelector(".textarea");
 var loadingDiv = document.querySelector(".loading");
 
+var isSpeakingEnabled = true;
+var isListening = false;
+var SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+var recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
 buttonSend.addEventListener("click", sendMessage);
+buttonVoice.addEventListener("click", toggleVoiceInput);
+buttonSpeak.addEventListener("click", toggleSpeechOutput);
 
 buttonSend.disabled = true;
 
 textareaSend.addEventListener("input", function () {
-  buttonSend.disabled = textareaSend.value.trim() === "";
+  updateSendButton();
 });
 
 textareaSend.addEventListener("keydown", function (event) {
-  if (event.key === "Enter") {
+  if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
-    buttonSend.click();
-    textareaSend.value = "";
-
-    //   show loading
-    loadingDiv.classList.add("show");
+    sendMessage();
   }
 });
 
+setupVoiceInput();
+
 async function sendMessage() {
-  // Lấy giá trị người nhập trong ô textarea
-  var valueTextArea = textareaSend.value;
+  var valueTextArea = textareaSend.value.trim();
 
-  //   Tạo thẻ div với value từ ô textarea class "own"
-  var newDivOwn = document.createElement("div");
-  newDivOwn.classList.add("own");
-  newDivOwn.innerText = valueTextArea;
+  if (!valueTextArea) {
+    updateSendButton();
+    return;
+  }
 
-  //   đưa div thành con của main
-  document.querySelector("#main").appendChild(newDivOwn);
+  textareaSend.value = "";
+  updateSendButton();
+  addMessage("own", valueTextArea);
+  scrollToBottom();
+  showOrHideLoading(true);
 
-  main.scrollTo({
-    top: main.scrollHeight,
-    behavior: "smooth",
+  try {
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_GEMINI_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: "Hãy trả lời bằng tiếng Việt, rõ ràng và dễ hiểu.",
+            },
+            {
+              role: "user",
+              content: valueTextArea,
+            },
+          ],
+          max_tokens: 1024,
+          stream: false,
+        }),
+      },
+    );
+
+    const dataConvertJson = await response.json();
+    const valueResponse = response.ok
+      ? dataConvertJson.choices?.[0]?.message?.content ||
+        "Không nhận được phản hồi."
+      : `Lỗi: ${dataConvertJson.error?.message || `HTTP ${response.status}`}`;
+
+    addMessage("guest", valueResponse);
+    speak(valueResponse);
+  } catch (error) {
+    addMessage("guest", "Không thể kết nối đến chatbot. Vui lòng thử lại.");
+  } finally {
+    showOrHideLoading(false);
+    scrollToBottom();
+  }
+}
+
+function setupVoiceInput() {
+  if (!recognition) {
+    buttonVoice.disabled = true;
+    buttonVoice.title = "Trình duyệt này chưa hỗ trợ nhận giọng nói";
+    return;
+  }
+
+  recognition.lang = "vi-VN";
+  recognition.interimResults = true;
+  recognition.continuous = false;
+
+  recognition.addEventListener("start", function () {
+    isListening = true;
+    buttonVoice.classList.add("listening");
+    buttonVoice.title = "Đang nghe...";
   });
 
-  //   gửi yêu cầu qua gemini
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_GEMINI_KEY}`,
-    {
-      method: "POST",
+  recognition.addEventListener("result", function (event) {
+    var transcript = "";
 
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: valueTextArea
-              }
-            ]
-          }
-        ]
-      })
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
     }
-  );
 
-  // đợi yêu cầu phản hồi và hứng câu trả lời
-  const dataConvertJson = await response.json();
+    textareaSend.value = transcript.trim();
+    updateSendButton();
 
-  //  Lấy giá trị phản hồi từ gemini
-  const valueResponse = dataConvertJson.candidates?.[0]
-                ?.content
-                ?.parts?.[0]
-                ?.text || "Không nhận được phản hồi.";
-                
-  //   hidden
-  loadingDiv.classList.remove("show");
+    if (event.results[event.results.length - 1].isFinal) {
+      sendMessage();
+    }
+  });
 
-  //   HIển thị câu phản hồi ra ngoài màn hình
-  //   Tạo thẻ div với value từ ô textarea class "guest"
+  recognition.addEventListener("end", function () {
+    isListening = false;
+    buttonVoice.classList.remove("listening");
+    buttonVoice.title = "Nói với chatbot";
+  });
+
+  recognition.addEventListener("error", function (event) {
+    isListening = false;
+    buttonVoice.classList.remove("listening");
+    buttonVoice.title = "Nói với chatbot";
+
+    if (event.error === "not-allowed") {
+      addMessage(
+        "guest",
+        "Trình duyệt đang chặn microphone. Hãy cấp quyền mic rồi thử lại.",
+      );
+      scrollToBottom();
+    }
+  });
+}
+
+function toggleVoiceInput() {
+  if (!recognition) {
+    return;
+  }
+
+  cancelSpeech();
+
+  if (isListening) {
+    recognition.stop();
+  } else {
+    recognition.start();
+  }
+}
+
+function toggleSpeechOutput() {
+  isSpeakingEnabled = !isSpeakingEnabled;
+  buttonSpeak.classList.toggle("active", isSpeakingEnabled);
+  buttonSpeak.innerHTML = isSpeakingEnabled
+    ? '<i class="fas fa-volume-high"></i>'
+    : '<i class="fas fa-volume-xmark"></i>';
+
+  if (!isSpeakingEnabled) {
+    cancelSpeech();
+  }
+}
+
+function speak(text) {
+  if (!isSpeakingEnabled || !("speechSynthesis" in window)) {
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  var utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "vi-VN";
+  utterance.rate = 1;
+  utterance.pitch = 1;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function cancelSpeech() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+function showOrHideLoading(isShow) {
+  loadingDiv.classList.toggle("show", isShow);
+  updateSendButton();
+}
+
+function updateSendButton() {
+  buttonSend.disabled =
+    textareaSend.value.trim() === "" || loadingDiv.classList.contains("show");
+}
+
+function addMessage(type, valueResponse) {
   var newDivGuest = document.createElement("div");
-  newDivGuest.classList.add("guest");
+  newDivGuest.classList.add(type);
   newDivGuest.innerText = valueResponse;
+  main.appendChild(newDivGuest);
+}
 
-  //   đưa div thành con của main
-  document.querySelector("#main").appendChild(newDivGuest);
-
+function scrollToBottom() {
   main.scrollTo({
     top: main.scrollHeight,
     behavior: "smooth",
