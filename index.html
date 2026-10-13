@@ -1,38 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chat bot</title>
-    <!-- link style -->
     <link rel="stylesheet" href="./style.css" />
-
-    <!-- link icon-->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     />
   </head>
   <body>
-    <!-- ===== HEADER ===== -->
     <div id="header">
       <div class="icon"><i class="fas fa-comments"></i></div>
       <div class="name">
         <h4>Chatbot</h4>
       </div>
     </div>
-    <!-- ===== HEADER ===== -->
 
-    <!-- ===== MAIN ===== -->
     <div id="main">
       <div class="guest">
-        Chào bạn, tôi là Chatbot AI, tôi có thể giúp gì được cho bạn?
+        Chào bạn, tôi là Chatbot AI. Tôi có thể giúp gì được cho bạn?
       </div>
     </div>
-    <!-- ===== MAIN ===== -->
 
     <div class="loading">
-      <img src="./static/loading.svg" alt="" srcset="" />
+      <img src="./static/loading.svg" alt="Đang tải" />
     </div>
 
     <div id="footer">
@@ -40,20 +33,24 @@
         <div class="input-text">
           <textarea
             class="textarea"
-            name=""
-            placeholder="Vui lòng nhập..."
+            placeholder="Vui lòng nhập hoặc bấm micro để nói..."
           ></textarea>
         </div>
 
         <div class="enter">
-          <button class="button">
+          <button class="voice-button" title="Nói với chatbot" type="button">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button class="speak-button active" title="Bật/tắt đọc câu trả lời" type="button">
+            <i class="fas fa-volume-high"></i>
+          </button>
+          <button class="button" type="button" title="Gửi">
             <i class="far fa-paper-plane"></i>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- link javascript -->
     <script src="./config.js"></script>
     <script src="./script.js"></script>
   </body>
